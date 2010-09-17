@@ -5,9 +5,8 @@
 # This module is part of pywhois and is released under
 # the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
-# minor changes and additions by MatToufoutu
+# minor changes and new parsers by MatToufoutu
 #
-#TODO: code parser for .it domains
 #TODO: code parser for .uk domains
 
 import re
@@ -109,6 +108,7 @@ class WhoisEntry(object):
         """
         Given a whois output string, return a WhoisEntry instance representing the parsed content.
         """
+        #TODO: find a way to make these calls dynamics
         if text.strip() == 'No whois server is known for this kind of object.':
             raise WhoisError(text)
         if domain.endswith('.com'):
@@ -127,6 +127,10 @@ class WhoisEntry(object):
             return WhoisMe(domain, text)
         elif domain.endswith('.fr'):
             return WhoisFr(domain, text)
+        elif domain.endswith('.it'):
+            return WhoisIt(domain, text)
+        elif domain.endswith('.uk'):
+            return WhoisUk(domain, text)
         else:
             return WhoisEntry(domain, text)
 
@@ -208,7 +212,7 @@ class WhoisName(WhoisEntry):
         if 'No match.' in text:
             raise WhoisError(text)
         else:
-            super(WhoisMe, self).__init__(domain, text, self.regex)
+            super(WhoisName, self).__init__(domain, text, self.regex)
 
 
 class WhoisUs(WhoisEntry):
@@ -380,6 +384,30 @@ class WhoisFr(WhoisEntry):
             raise WhoisError(text)
         else:
             super(WhoisFr, self).__init__(domain, text, self.regex)
+
+
+class WhoisIt(WhoisEntry):
+    """
+    Whois parser for .it domains.
+    """
+    #TODO: add regex to parse results
+    def __init__(self, domain, text):
+        if 'AVAILABLE' in text:
+            raise WhoisError("Domain is not registered")
+        else:
+            super(WhoisIt, self).__init__(domain, text)
+
+
+class WhoisUk(WhoisEntry):
+    """
+    Whois parser for .uk domains.
+    """
+    #TODO: add regex to parse results
+    def __init__(self, domain, text):
+        if ('No match for' in text) or ('Error for' in text):
+            raise WhoisError(text)
+        else:
+            super(WhoisUk, self).__init__(domain, text)
 
 
 def cast_date(date_str):
