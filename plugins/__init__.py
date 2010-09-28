@@ -22,6 +22,7 @@ import re
 from collections import defaultdict
 from functools import wraps
 from inspect import getargspec
+from include.utils import cached
 
 try:
     set
@@ -53,6 +54,7 @@ class BasePlugin(object):
     noticeHelp = None
 
     @property
+    @cached
     def callbacks(self):
         """get a list of events supported by the plugin.
         @return list"""
@@ -102,14 +104,17 @@ class Manager(object):
             self.plugins.append(plugin)
             for event in plugin.callbacks:
                 callback = getattr(plugin, 'on_%s' % event)
-                self.register(event, callback)
+                self.register(plugin, event, callback)
 
-    def register(self, event, callback):
-        """link an event to a callback.
+    def register(self, plugin, event, callback):
+        """link an event to a callback
+        @param plugin (object): plugin for which the event is being registered.
         @param event (str): event name
         @param callback (func): function to call when event is triggered
         """
         #TODO: check if event exists
+        if not hasattr(plugin.client, event):
+            raise UnsupportedEventError(event)
         if not callback in self.callbacks[event]:
             self.callbacks[event].append(callback)
 
@@ -122,6 +127,7 @@ class Manager(object):
         #TODO: use twisted defered system for events callbacks
         for callback in self.callbacks[event]:
             callback(*args, **kwargs)
+
 
 class trigger(object):
     def __init__(self, trigger, callback):
